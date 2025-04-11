@@ -14,6 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { MessageTemplate, FAQItem } from '@/types';
 import { toast } from 'sonner';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+
 
 const Settings = () => {
   const { 
@@ -112,11 +114,16 @@ const Settings = () => {
   
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold">Settings</h1>
-        <p className="text-muted-foreground">
-          Configure WhatsBot settings and message templates
-        </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">Settings</h1>
+          <p className="text-muted-foreground">
+            Configure WhatsBot settings and message templates
+          </p>
+        </div>
+        <div className="flex gap-2 items-center">
+          <ThemeToggle />
+        </div>
       </div>
       
       <Tabs defaultValue="general" className="w-full space-y-6">

@@ -7,6 +7,8 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { OrderData } from '@/types';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+
 
 const Dashboard = () => {
   const { orders, isWhatsappReady, settings } = useAppContext();
@@ -67,7 +69,9 @@ const Dashboard = () => {
             Manage your WhatsApp order follow-ups
           </p>
         </div>
-        <div className="flex flex-col xs:flex-row gap-2">
+        <div className="flex gap-2 items-center">
+          <ThemeToggle />
+          
           <Link to="/csv-upload">
             <Button className="flex items-center gap-2">
               <FileSpreadsheet className="h-4 w-4" />
@@ -84,14 +88,14 @@ const Dashboard = () => {
       </div>
       
       {!isWhatsappReady && (
-        <Card className="border-amber-200 bg-amber-50">
+        <Card className="border-amber-200 bg-amber-50 dark:bg-amber-900 dark:border-amber-800">
           <CardContent className="p-4">
             <div className="flex items-start gap-4">
-              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-                <MessageSquare className="h-5 w-5 text-amber-600" />
+              <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-800 flex items-center justify-center">
+                <MessageSquare className="h-5 w-5 text-amber-600 dark:text-amber-200" />
               </div>
               <div>
-                <h3 className="font-medium">WhatsApp Connection Required</h3>
+                <h3 className="font-medium text-amber-900 dark:text-amber-100">WhatsApp Connection Required</h3>
                 <p className="text-sm text-muted-foreground mt-1">
                   You need to connect to WhatsApp to send messages. Go to Settings to set up your WhatsApp connection.
                 </p>

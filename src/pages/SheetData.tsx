@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Search, FileSpreadsheet, CalendarDays } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { formatDistanceToNow, format } from 'date-fns';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+
 
 interface SheetGroup {
   name: string;
@@ -113,6 +115,9 @@ const SheetData = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <div className="flex gap-2 items-center">
+            <ThemeToggle />
+          </div>
           <Badge variant="outline" className="flex items-center gap-1">
             <FileSpreadsheet className="h-4 w-4" />
             <span>{sheetGroups.length} Sheets</span>

@@ -10,6 +10,8 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { OrderData, OrderStatus } from '@/types';
 import { toast } from 'sonner';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+
 
 const SampleCSV = `Lineitem name,Billing Name,Billing Phone,Billing Address,Status,Order #
 Electric Callus Remover for Feet,Khan Asim Iqbal,3457766748,"House no. 403-B, Peoples Colony-1",Not Responding,1091
@@ -308,11 +310,16 @@ const CSVUpload = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold">CSV Upload</h1>
-        <p className="text-muted-foreground">
-          Import your order data from a CSV file
-        </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold">CSV Upload</h1>
+          <p className="text-muted-foreground">
+            Import your order data from a CSV file
+          </p>
+        </div>
+        <div className="flex gap-2 items-center">
+          <ThemeToggle />
+        </div>
       </div>
       
       <Tabs defaultValue="upload" className="w-full">

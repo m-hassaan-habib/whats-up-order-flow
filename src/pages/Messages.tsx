@@ -309,7 +309,7 @@ const Messages = () => {
       </div>
       
       {!isWhatsappReady && (
-        <Alert variant="destructive" className="bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-900">
+        <Alert variant="destructive" className="dark:bg-amber-900 dark:border-amber-800 dark:text-amber-100 bg-amber-50 border-amber-200 text-amber-700">
           <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           <AlertTitle>WhatsApp not connected</AlertTitle>
           <AlertDescription>

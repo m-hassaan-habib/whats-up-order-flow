@@ -12,6 +12,8 @@ import { Badge } from '@/components/ui/badge';
 import { Filter, Search, FileSpreadsheet, Phone, User, Package, MapPin, Calendar } from 'lucide-react';
 import { OrderListPagination } from '@/components/OrderListPagination';
 import { formatDistanceToNow } from 'date-fns';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
+
 
 const Orders = () => {
   const { orders } = useAppContext();
@@ -72,6 +74,7 @@ const Orders = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
+        <ThemeToggle />
           <span className="text-sm text-muted-foreground">
             {filteredOrders.length} orders found
           </span>

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { v4 as uuidv4 } from 'uuid';
@@ -18,12 +19,13 @@ import { toast } from 'sonner';
 const Settings = () => {
   const { 
     settings, 
-    setSettings, 
     templates, 
-    setTemplates, 
     faqs, 
-    setFaqs, 
-    setIsWhatsappReady 
+    isWhatsappReady,
+    setSettings,
+    setTemplates,
+    setFaqs,
+    setWhatsappReady
   } = useAppContext();
   
   const [localSettings, setLocalSettings] = useState({ ...settings });

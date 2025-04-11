@@ -27,6 +27,11 @@ interface AppContextType {
   clearAllOrders: () => void;
   processingStatus: { [orderId: string]: 'idle' | 'processing' | 'success' | 'error' };
   setProcessingStatus: (status: { [orderId: string]: 'idle' | 'processing' | 'success' | 'error' }) => void;
+  // Add the setters that were missing in the interface
+  setOrders: React.Dispatch<React.SetStateAction<OrderData[]>>;
+  setTemplates: React.Dispatch<React.SetStateAction<MessageTemplate[]>>;
+  setFaqs: React.Dispatch<React.SetStateAction<FAQItem[]>>;
+  setSettings: React.Dispatch<React.SetStateAction<SettingsData>>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -131,7 +136,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   }, [settings]);
   
   const addOrder = (order: Omit<OrderData, 'id'>) => {
-    const newOrder: OrderData = { id: uuidv4(), orderNumber: generateOrderNumber(), ...order };
+    const newOrder: OrderData = { 
+      id: uuidv4(), 
+      orderNumber: order.orderNumber || generateOrderNumber(), 
+      ...order 
+    };
     setOrders([...orders, newOrder]);
   };
   
@@ -207,7 +216,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const generateOrderNumber = (): string => {
     const baseNumber = 1000;
     const randomNumber = Math.floor(Math.random() * 2000) + baseNumber;
-    return `#${randomNumber}`;
+    return `${randomNumber}`;
   };
 
   const parseCSVData = (csvData: string): OrderData[] => {
@@ -261,6 +270,11 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     clearAllOrders,
     processingStatus,
     setProcessingStatus,
+    // Add the missing setter functions to the context value
+    setOrders,
+    setTemplates,
+    setFaqs,
+    setSettings
   };
   
   return (

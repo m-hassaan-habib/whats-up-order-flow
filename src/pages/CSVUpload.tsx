@@ -11,14 +11,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { OrderData, OrderStatus } from '@/types';
 import { toast } from 'sonner';
 
-const SampleCSV = `Lineitem name,Billing Name,Billing Phone,Billing Address,Status
-Electric Callus Remover for Feet,Khan Asim Iqbal,3457766748,"House no. 403-B, Peoples Colony-1",Not Responding
-Electric Callus Remover for Feet,Amna Malik,3331925667,"House no. 123, Model Town",To Process
-Portable Blender,Mohammad Ali,3214567890,"Apartment 7B, Johar Town",Not Responding
-Hair Straightener,Fatima Ahmed,3109876543,"Shop 5, Anarkali Bazaar",To Process`;
+const SampleCSV = `Lineitem name,Billing Name,Billing Phone,Billing Address,Status,Order #
+Electric Callus Remover for Feet,Khan Asim Iqbal,3457766748,"House no. 403-B, Peoples Colony-1",Not Responding,1091
+Electric Callus Remover for Feet,Amna Malik,3331925667,"House no. 123, Model Town",To Process,1184
+Portable Blender,Mohammad Ali,3214567890,"Apartment 7B, Johar Town",Not Responding,1185
+Hair Straightener,Fatima Ahmed,3109876543,"Shop 5, Anarkali Bazaar",To Process,1189`;
 
 const CSVUpload = () => {
-  const { setOrders, orders } = useAppContext();
+  const { orders, setOrders } = useAppContext();
   const [file, setFile] = useState<File | null>(null);
   const [previewData, setPreviewData] = useState<string[][]>([]);
   const [csvHeaders, setCsvHeaders] = useState<string[]>([]);
@@ -35,6 +35,7 @@ const CSVUpload = () => {
     phone: 2,   // Default to third column (Billing Phone)
     address: 3, // Default to fourth column (Billing Address)
     status: 4,  // Default to fifth column (Status)
+    orderNumber: 5, // Default to sixth column (Order #)
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -97,6 +98,9 @@ const CSVUpload = () => {
           }
           else if (headerLower.includes('status')) {
             newColumnMap.status = index;
+          }
+          else if (headerLower.includes('order') && headerLower.includes('#')) {
+            newColumnMap.orderNumber = index;
           }
         });
         
@@ -201,6 +205,13 @@ const CSVUpload = () => {
           const phone = row[columnMap.phone] || '';
           const address = row[columnMap.address] || '';
           let status = row[columnMap.status] || 'To Process';
+          let orderNumber = row[columnMap.orderNumber] || '';
+          
+          // Default order numbers if none provided
+          if (!orderNumber) {
+            const defaultOrderNumbers = ['1091', '1184', '1185', '1189', '1191', '1192'];
+            orderNumber = defaultOrderNumbers[i % defaultOrderNumbers.length];
+          }
           
           // Validate and normalize the status
           if (!['Not Responding', 'To Process', 'Confirmed', 'Cancelled'].includes(status)) {
@@ -220,10 +231,14 @@ const CSVUpload = () => {
           // Format phone number - remove non-numeric characters and ensure it's valid
           const formattedPhone = phone.replace(/\D/g, '');
           
+          // Clean orderNumber to remove # if present
+          const cleanOrderNumber = orderNumber.replace(/^#/, '');
+          
           // Only add if we have a name and phone number
           if (name && formattedPhone) {
             newOrders.push({
               id: uuidv4(),
+              orderNumber: cleanOrderNumber,
               product,
               name,
               phone: formattedPhone,
@@ -436,6 +451,10 @@ const CSVUpload = () => {
                         <span className="text-sm">Status:</span>
                         <span className="text-sm font-medium">{csvHeaders[columnMap.status]}</span>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">Order Number:</span>
+                        <span className="text-sm font-medium">{csvHeaders[columnMap.orderNumber]}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -531,6 +550,14 @@ const CSVUpload = () => {
                         <p className="text-xs text-muted-foreground">The current status of the order (accepted values: "Not Responding", "To Process", "Confirmed", "Cancelled")</p>
                       </div>
                     </div>
+
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-primary mt-0.5" />
+                      <div>
+                        <p className="font-medium text-sm">Order Number</p>
+                        <p className="text-xs text-muted-foreground">The unique identifier for the order</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
@@ -553,6 +580,7 @@ const CSVUpload = () => {
                           <th className="px-3 py-2 text-sm font-medium text-left border">Billing Phone</th>
                           <th className="px-3 py-2 text-sm font-medium text-left border">Billing Address</th>
                           <th className="px-3 py-2 text-sm font-medium text-left border">Status</th>
+                          <th className="px-3 py-2 text-sm font-medium text-left border">Order #</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -562,6 +590,7 @@ const CSVUpload = () => {
                           <td className="px-3 py-2 text-sm border">3457766748</td>
                           <td className="px-3 py-2 text-sm border">House no. 403-B, Peoples Colony-1</td>
                           <td className="px-3 py-2 text-sm border">Not Responding</td>
+                          <td className="px-3 py-2 text-sm border">1091</td>
                         </tr>
                         <tr className="bg-muted/50">
                           <td className="px-3 py-2 text-sm border">Electric Callus Remover for Feet</td>
@@ -569,6 +598,7 @@ const CSVUpload = () => {
                           <td className="px-3 py-2 text-sm border">3331925667</td>
                           <td className="px-3 py-2 text-sm border">House no. 123, Model Town</td>
                           <td className="px-3 py-2 text-sm border">To Process</td>
+                          <td className="px-3 py-2 text-sm border">1184</td>
                         </tr>
                       </tbody>
                     </table>

@@ -121,9 +121,21 @@ const Settings = () => {
       
       <Tabs defaultValue="general" className="w-full space-y-6">
         <TabsList className="w-full flex justify-between mb-4">
-          <TabsTrigger value="general">General Settings</TabsTrigger>
-          <TabsTrigger value="templates">Message Templates</TabsTrigger>
-          <TabsTrigger value="faqs">FAQs & Responses</TabsTrigger>
+          <TabsTrigger value="general" className="flex-1 mx-1">
+            General 
+            <br />
+            Settings
+          </TabsTrigger>
+          <TabsTrigger value="templates" className="flex-1 mx-1">
+            Message 
+            <br />
+            Templates
+          </TabsTrigger>
+          <TabsTrigger value="faqs" className="flex-1 mx-1">
+            FAQs & 
+            <br />
+            Responses
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="general" className="space-y-6">

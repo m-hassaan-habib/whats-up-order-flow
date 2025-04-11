@@ -1,8 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAppContext } from '@/context/AppContext';
-import { Smartphone, CheckSquare, Send, Filter, InfoIcon, Search, MoreHorizontal, AlertTriangle, CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
+import { 
+  Smartphone, CheckSquare, Send, Filter, InfoIcon, Search, 
+  MoreHorizontal, AlertTriangle, CheckCircle, XCircle, Clock, 
+  Loader2, Moon, Sun 
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -17,15 +21,24 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { OrderData, OrderStatus } from '@/types';
 import { toast } from 'sonner';
+import { OrderListPagination } from '@/components/OrderListPagination';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 interface MessagePreviewProps {
   orderId: string;
+  orderNumber: string; // Added orderNumber
   customerName: string;
   product: string;
   message: string;
 }
 
-const MessagePreview: React.FC<MessagePreviewProps> = ({ orderId, customerName, product, message }) => {
+const MessagePreview: React.FC<MessagePreviewProps> = ({ 
+  orderId, 
+  orderNumber, // Added orderNumber
+  customerName, 
+  product, 
+  message 
+}) => {
   const [showFullMessage, setShowFullMessage] = useState(false);
   
   const displayedMessage = showFullMessage ? message : message.substring(0, 100) + (message.length > 100 ? '...' : '');
@@ -44,7 +57,7 @@ const MessagePreview: React.FC<MessagePreviewProps> = ({ orderId, customerName, 
         <DialogHeader>
           <DialogTitle>Message Preview</DialogTitle>
           <DialogDescription>
-            Preview the message that will be sent to {customerName} for {product}
+            Preview the message that will be sent to {customerName} for {product} (Order #{orderNumber})
           </DialogDescription>
         </DialogHeader>
         <div className="message-bubble received w-full my-2">
@@ -80,23 +93,52 @@ const Messages = () => {
   const [messageMode, setMessageMode] = useState<'template' | 'custom'>('template');
   const [showCustomMessageDialog, setShowCustomMessageDialog] = useState(false);
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  
   // Check if all orders are selected
   const allSelected = orders.length > 0 && selectedOrders.length === orders.length;
   
   // Filter orders based on search query and status filter
-  const filteredOrders = orders.filter(order => {
-    // Search filter
-    const matchesSearch = 
-      searchQuery === '' || 
-      order.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.product.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.phone.includes(searchQuery);
-    
-    // Status filter
-    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+  const filteredOrders = useMemo(() => {
+    return orders.filter(order => {
+      // Search filter
+      const matchesSearch = 
+        searchQuery === '' || 
+        order.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.product.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        order.phone.includes(searchQuery) ||
+        order.orderNumber.includes(searchQuery); // Added order number to search
+      
+      // Status filter
+      const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
+      
+      return matchesSearch && matchesStatus;
+    });
+  }, [orders, searchQuery, statusFilter]);
+  
+  // Calculate pagination
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / itemsPerPage));
+  
+  // Get current page orders
+  const currentOrders = useMemo(() => {
+    const start = (currentPage - 1) * itemsPerPage;
+    const end = start + itemsPerPage;
+    return filteredOrders.slice(start, end);
+  }, [filteredOrders, currentPage, itemsPerPage]);
+  
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, statusFilter]);
+  
+  // Make sure current page is valid when total pages changes
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
   
   // Handle sending messages
   const sendWhatsAppMessages = async () => {
@@ -147,7 +189,7 @@ const Messages = () => {
           .replace(/{name}/g, order.name)
           .replace(/{businessName}/g, settings.businessName)
           .replace(/{product}/g, order.product)
-          .replace(/{orderNumber}/g, order.id.substring(0, 8))
+          .replace(/{orderNumber}/g, order.orderNumber || order.id.substring(0, 8))
           .replace(/{websiteUrl}/g, settings.websiteUrl);
         
         console.log(`Sending message to ${order.name} (${order.phone}): ${formattedMessage}`);
@@ -187,13 +229,13 @@ const Messages = () => {
   const getStatusBadge = (status: OrderStatus) => {
     switch (status) {
       case 'Confirmed':
-        return <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">{status}</Badge>;
+        return <Badge variant="outline" className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800">{status}</Badge>;
       case 'Not Responding':
-        return <Badge variant="outline" className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200">{status}</Badge>;
+        return <Badge variant="outline" className="bg-amber-100 text-amber-800 hover:bg-amber-100 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800">{status}</Badge>;
       case 'To Process':
-        return <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200">{status}</Badge>;
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800">{status}</Badge>;
       case 'Cancelled':
-        return <Badge variant="outline" className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200">{status}</Badge>;
+        return <Badge variant="outline" className="bg-red-100 text-red-800 hover:bg-red-100 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">{status}</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -219,7 +261,7 @@ const Messages = () => {
       .replace(/{name}/g, order.name)
       .replace(/{businessName}/g, settings.businessName)
       .replace(/{product}/g, order.product)
-      .replace(/{orderNumber}/g, order.id.substring(0, 8))
+      .replace(/{orderNumber}/g, order.orderNumber || order.id.substring(0, 8))
       .replace(/{websiteUrl}/g, settings.websiteUrl);
   };
   
@@ -243,7 +285,9 @@ const Messages = () => {
           </p>
         </div>
         
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <ThemeToggle />
+          
           {!isWhatsappReady && (
             <Link to="/settings">
               <Button variant="outline" className="flex items-center gap-2">
@@ -265,8 +309,8 @@ const Messages = () => {
       </div>
       
       {!isWhatsappReady && (
-        <Alert variant="destructive" className="bg-amber-50 border-amber-200">
-          <AlertTriangle className="h-4 w-4 text-amber-600" />
+        <Alert variant="destructive" className="bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-900">
+          <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           <AlertTitle>WhatsApp not connected</AlertTitle>
           <AlertDescription>
             You need to connect WhatsApp to send messages. Go to Settings to connect.
@@ -304,7 +348,7 @@ const Messages = () => {
                 <div className="relative flex-1">
                   <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search by name, product, or phone"
+                    placeholder="Search by name, product, order #, or phone"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9"
@@ -345,6 +389,7 @@ const Messages = () => {
                             disabled={orders.length === 0}
                           />
                         </th>
+                        <th className="text-left p-3 font-medium text-sm">Order #</th>
                         <th className="text-left p-3 font-medium text-sm">Customer</th>
                         <th className="text-left p-3 font-medium text-sm">Product</th>
                         <th className="text-left p-3 font-medium text-sm">Status</th>
@@ -352,8 +397,8 @@ const Messages = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {filteredOrders.length > 0 ? (
-                        filteredOrders.map((order) => (
+                      {currentOrders.length > 0 ? (
+                        currentOrders.map((order) => (
                           <tr key={order.id} className="border-b hover:bg-muted/20">
                             <td className="p-3">
                               <div className="flex items-center gap-1">
@@ -363,6 +408,9 @@ const Messages = () => {
                                 />
                                 {getProcessingStatusIcon(order.id)}
                               </div>
+                            </td>
+                            <td className="p-3">
+                              <div className="font-medium">#{order.orderNumber || order.id.substring(0, 8)}</div>
                             </td>
                             <td className="p-3">
                               <div className="font-medium">{order.name}</div>
@@ -392,25 +440,25 @@ const Messages = () => {
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem
                                     onClick={() => updateOrderStatus(order.id, 'Confirmed')}
-                                    className="text-green-600"
+                                    className="text-green-600 dark:text-green-400"
                                   >
                                     Mark as Confirmed
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() => updateOrderStatus(order.id, 'Not Responding')}
-                                    className="text-amber-600"
+                                    className="text-amber-600 dark:text-amber-400"
                                   >
                                     Mark as Not Responding
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() => updateOrderStatus(order.id, 'To Process')}
-                                    className="text-blue-600"
+                                    className="text-blue-600 dark:text-blue-400"
                                   >
                                     Mark as To Process
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() => updateOrderStatus(order.id, 'Cancelled')}
-                                    className="text-red-600"
+                                    className="text-red-600 dark:text-red-400"
                                   >
                                     Mark as Cancelled
                                   </DropdownMenuItem>
@@ -421,7 +469,7 @@ const Messages = () => {
                         ))
                       ) : (
                         <tr>
-                          <td colSpan={5} className="p-6 text-center text-muted-foreground">
+                          <td colSpan={6} className="p-6 text-center text-muted-foreground">
                             No orders match your search criteria
                           </td>
                         </tr>
@@ -429,6 +477,17 @@ const Messages = () => {
                     </tbody>
                   </table>
                 </div>
+                
+                {/* Pagination */}
+                {filteredOrders.length > 0 && (
+                  <div className="p-3 border-t">
+                    <OrderListPagination 
+                      currentPage={currentPage}
+                      totalPages={totalPages}
+                      onPageChange={setCurrentPage}
+                    />
+                  </div>
+                )}
               </div>
             </div>
             
@@ -511,6 +570,7 @@ const Messages = () => {
                         <MessagePreview
                           key={order.id}
                           orderId={order.id}
+                          orderNumber={order.orderNumber || order.id.substring(0, 8)}
                           customerName={order.name}
                           product={order.product}
                           message={formatMessageWithData(getCurrentMessageTemplate(), order)}
@@ -572,6 +632,7 @@ const Messages = () => {
                 <p><span className="font-mono">{'{businessName}'}</span> - Your business name</p>
                 <p><span className="font-mono">{'{product}'}</span> - Product name</p>
                 <p><span className="font-mono">{'{orderNumber}'}</span> - Order number</p>
+                <p><span className="font-mono">{'{websiteUrl}'}</span> - Website URL</p>
               </div>
             </div>
           </div>

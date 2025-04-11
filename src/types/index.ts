@@ -3,6 +3,7 @@ export type OrderStatus = 'Not Responding' | 'To Process' | 'Confirmed' | 'Cance
 
 export interface OrderData {
   id: string;
+  orderNumber: string; // Added orderNumber field
   product: string;
   name: string;
   phone: string;

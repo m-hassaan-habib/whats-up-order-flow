@@ -1,158 +1,197 @@
-
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { OrderData, OrderStatus, MessageTemplate, FAQItem, SettingsData } from '@/types';
+import { toast } from 'sonner';
 
 interface AppContextType {
   orders: OrderData[];
-  setOrders: React.Dispatch<React.SetStateAction<OrderData[]>>;
+  addOrder: (order: Omit<OrderData, 'id'>) => void;
+  updateOrder: (id: string, updates: Partial<OrderData>) => void;
+  deleteOrder: (id: string) => void;
   updateOrderStatus: (id: string, status: OrderStatus) => void;
   templates: MessageTemplate[];
-  setTemplates: React.Dispatch<React.SetStateAction<MessageTemplate[]>>;
+  addTemplate: (template: Omit<MessageTemplate, 'id'>) => void;
+  updateTemplate: (id: string, updates: Partial<MessageTemplate>) => void;
+  deleteTemplate: (id: string) => void;
   faqs: FAQItem[];
-  setFaqs: React.Dispatch<React.SetStateAction<FAQItem[]>>;
+  addFaq: (faq: Omit<FAQItem, 'id'>) => void;
+  updateFaq: (id: string, updates: Partial<FAQItem>) => void;
+  deleteFaq: (id: string) => void;
   settings: SettingsData;
-  setSettings: React.Dispatch<React.SetStateAction<SettingsData>>;
+  updateSettings: (updates: Partial<SettingsData>) => void;
   isWhatsappReady: boolean;
-  setIsWhatsappReady: React.Dispatch<React.SetStateAction<boolean>>;
+  setWhatsappReady: (ready: boolean) => void;
   selectedOrders: string[];
-  setSelectedOrders: React.Dispatch<React.SetStateAction<string[]>>;
-  toggleOrderSelection: (id: string) => void;
-  selectAllOrders: (selected: boolean) => void;
-  processingStatus: { [key: string]: 'idle' | 'processing' | 'success' | 'error' };
-  setProcessingStatus: React.Dispatch<React.SetStateAction<{ [key: string]: 'idle' | 'processing' | 'success' | 'error' }>>;
+  toggleOrderSelection: (orderId: string) => void;
+  selectAllOrders: (checked: boolean) => void;
+  clearAllOrders: () => void;
+  processingStatus: { [orderId: string]: 'idle' | 'processing' | 'success' | 'error' };
+  setProcessingStatus: (status: { [orderId: string]: 'idle' | 'processing' | 'success' | 'error' }) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-// Default templates
+interface AppProviderProps {
+  children: React.ReactNode;
+}
+
 const defaultTemplates: MessageTemplate[] = [
   {
-    id: '1',
-    name: 'Initial Contact',
-    content: 'Assalam o Alikum, *Mr./Mrs. {name}*,\n\nHum *{businessName}* ki trf se aap se rabta kr rhy hain.\n\nAap ne hmari website pr *{product}* ka order kia tha jis ka order number *{orderNumber}* hai.\n\nAap se request hai ky Kindly order confirm kr den ta ky hum apka order jald az jald process kr den.\n\nBht Shukria!!',
-    variables: ['name', 'businessName', 'product', 'orderNumber']
+    id: uuidv4(),
+    name: 'Order Confirmation',
+    content: `Hi {name}, your order #{orderNumber} has been confirmed. Thank you!`,
+    variables: ['name', 'orderNumber'],
   },
   {
-    id: '2',
-    name: 'Follow-up',
-    content: 'Assalam o Alikum, *Mr./Mrs. {name}*,\n\nHum *{businessName}* ki trf se dobara aap se rabta kr rhy hain.\n\nKya aap ne hmara pichla message dekha tha? Aap ne *{product}* ka order kia tha.\n\nHum iss order ko confirm karna chahte hain. Kya aap order confirm krna chahte hain?\n\nBht Shukria!!',
-    variables: ['name', 'businessName', 'product']
+    id: uuidv4(),
+    name: 'Shipping Update',
+    content: `Hello {name}, your order #{orderNumber} is on its way! Track it at {websiteUrl}`,
+    variables: ['name', 'orderNumber', 'websiteUrl'],
   },
-  {
-    id: '3',
-    name: 'Confirmation Thank You',
-    content: 'Shukria *Mr./Mrs. {name}*,\n\nAap ka order confirm ho gaya hai. Hum isse jald hi process kr den ge.\n\n3-4 din mein aap ko delivery ho jaye gi.\n\nBht Shukria!!',
-    variables: ['name']
-  }
 ];
 
-// Default FAQs
 const defaultFaqs: FAQItem[] = [
   {
-    id: '1',
-    question: 'Delivery kitne din mein hogi?',
-    answer: 'Delivery 3-4 din mein ho jaye gi.',
-    keywords: ['delivery', 'din', 'time', 'kab', 'jaldi', 'pahunchay ga', 'pahunche', 'kitna']
+    id: uuidv4(),
+    question: 'How do I track my order?',
+    answer: 'You can track your order by visiting our website and entering your order number.',
+    keywords: ['track', 'order', 'tracking'],
   },
   {
-    id: '2',
-    question: 'Aap kahan se hain?',
-    answer: 'Hum Lahore, Pakistan mein hain.',
-    keywords: ['kahan', 'location', 'address', 'lahore', 'pakistan', 'daftar', 'office']
+    id: uuidv4(),
+    question: 'What payment methods do you accept?',
+    answer: 'We accept all major credit cards, PayPal, and bank transfers.',
+    keywords: ['payment', 'methods', 'credit card', 'paypal'],
   },
-  {
-    id: '3',
-    question: 'Main aur products kaise dekh sakta hoon?',
-    answer: 'Aap hmari website {websiteUrl} par visit kr k sare products dekh sakte hain.',
-    keywords: ['products', 'items', 'aur', 'dusre', 'website', 'catalog', 'dekh']
-  },
-  {
-    id: '4',
-    question: 'Main dobara order kaise karu?',
-    answer: 'Dobara order karne k liye hmari website {websiteUrl} par visit karen.',
-    keywords: ['dobara', 'again', 'order', 'kaise', 'phir', 'dubara', 'new']
-  },
-  {
-    id: '5',
-    question: 'Cash on delivery available hai?',
-    answer: 'Ji han, cash on delivery available hai.',
-    keywords: ['cash', 'cod', 'delivery', 'payment', 'paisa', 'rupay', 'method']
-  }
 ];
 
-// Default settings
 const defaultSettings: SettingsData = {
   autoRun: false,
-  headlessMode: false,
-  messageInterval: 5, // minutes
-  followUpInterval: 120, // minutes (2 hours)
+  headlessMode: true,
+  messageInterval: 60,
+  followUpInterval: 120,
   maxFollowUps: 3,
-  businessName: 'Mihraaj Ventures',
-  websiteUrl: 'https://mihraajventures.com',
-  whatsappCredentials: undefined
+  businessName: 'My Business',
+  websiteUrl: 'https://mybusiness.com',
 };
 
-export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Load state from localStorage if available, otherwise use defaults
-  const [orders, setOrders] = useState<OrderData[]>(() => {
-    const saved = localStorage.getItem('whatsbot_orders');
-    return saved ? JSON.parse(saved) : [];
-  });
-  
-  const [templates, setTemplates] = useState<MessageTemplate[]>(() => {
-    const saved = localStorage.getItem('whatsbot_templates');
-    return saved ? JSON.parse(saved) : defaultTemplates;
-  });
-  
-  const [faqs, setFaqs] = useState<FAQItem[]>(() => {
-    const saved = localStorage.getItem('whatsbot_faqs');
-    return saved ? JSON.parse(saved) : defaultFaqs;
-  });
-  
-  const [settings, setSettings] = useState<SettingsData>(() => {
-    const saved = localStorage.getItem('whatsbot_settings');
-    return saved ? JSON.parse(saved) : defaultSettings;
-  });
-  
-  const [isWhatsappReady, setIsWhatsappReady] = useState<boolean>(false);
+export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
+  const [orders, setOrders] = useState<OrderData[]>([]);
+  const [templates, setTemplates] = useState<MessageTemplate[]>(defaultTemplates);
+  const [faqs, setFaqs] = useState<FAQItem[]>(defaultFaqs);
+  const [settings, setSettings] = useState<SettingsData>(defaultSettings);
+  const [isWhatsappReady, setWhatsappReady] = useState<boolean>(false);
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
-  const [processingStatus, setProcessingStatus] = useState<{ [key: string]: 'idle' | 'processing' | 'success' | 'error' }>({});
+  const [processingStatus, setProcessingStatus] = useState<{ [orderId: string]: 'idle' | 'processing' | 'success' | 'error' }>({});
   
-  // Save to localStorage when state changes
   useEffect(() => {
-    localStorage.setItem('whatsbot_orders', JSON.stringify(orders));
+    // Load data from localStorage on component mount
+    const storedOrders = localStorage.getItem('orders');
+    if (storedOrders) {
+      setOrders(JSON.parse(storedOrders));
+    }
+    
+    const storedTemplates = localStorage.getItem('templates');
+    if (storedTemplates) {
+      setTemplates(JSON.parse(storedTemplates));
+    } else {
+      setTemplates(defaultTemplates);
+    }
+    
+    const storedFaqs = localStorage.getItem('faqs');
+    if (storedFaqs) {
+      setFaqs(JSON.parse(storedFaqs));
+    } else {
+      setFaqs(defaultFaqs);
+    }
+    
+    const storedSettings = localStorage.getItem('settings');
+    if (storedSettings) {
+      setSettings(JSON.parse(storedSettings));
+    } else {
+      setSettings(defaultSettings);
+    }
+  }, []);
+  
+  useEffect(() => {
+    // Save data to localStorage whenever it changes
+    localStorage.setItem('orders', JSON.stringify(orders));
   }, [orders]);
   
   useEffect(() => {
-    localStorage.setItem('whatsbot_templates', JSON.stringify(templates));
+    localStorage.setItem('templates', JSON.stringify(templates));
   }, [templates]);
   
   useEffect(() => {
-    localStorage.setItem('whatsbot_faqs', JSON.stringify(faqs));
+    localStorage.setItem('faqs', JSON.stringify(faqs));
   }, [faqs]);
   
   useEffect(() => {
-    localStorage.setItem('whatsbot_settings', JSON.stringify(settings));
+    localStorage.setItem('settings', JSON.stringify(settings));
   }, [settings]);
   
+  const addOrder = (order: Omit<OrderData, 'id'>) => {
+    const newOrder: OrderData = { id: uuidv4(), orderNumber: generateOrderNumber(), ...order };
+    setOrders([...orders, newOrder]);
+  };
+  
+  const updateOrder = (id: string, updates: Partial<OrderData>) => {
+    setOrders(orders.map(order => (order.id === id ? { ...order, ...updates } : order)));
+  };
+  
+  const deleteOrder = (id: string) => {
+    setOrders(orders.filter(order => order.id !== id));
+    setSelectedOrders(selectedOrders.filter(orderId => orderId !== id));
+  };
+  
   const updateOrderStatus = (id: string, status: OrderStatus) => {
-    setOrders(prev => 
-      prev.map(order => 
+    setOrders(
+      orders.map(order =>
         order.id === id ? { ...order, status } : order
       )
     );
   };
   
-  const toggleOrderSelection = (id: string) => {
-    setSelectedOrders(prev => 
-      prev.includes(id) 
-        ? prev.filter(orderId => orderId !== id)
-        : [...prev, id]
-    );
+  const addTemplate = (template: Omit<MessageTemplate, 'id'>) => {
+    const newTemplate: MessageTemplate = { id: uuidv4(), ...template };
+    setTemplates([...templates, newTemplate]);
   };
   
-  const selectAllOrders = (selected: boolean) => {
-    if (selected) {
+  const updateTemplate = (id: string, updates: Partial<MessageTemplate>) => {
+    setTemplates(templates.map(template => (template.id === id ? { ...template, ...updates } : template)));
+  };
+  
+  const deleteTemplate = (id: string) => {
+    setTemplates(templates.filter(template => template.id !== id));
+  };
+  
+  const addFaq = (faq: Omit<FAQItem, 'id'>) => {
+    const newFaq: FAQItem = { id: uuidv4(), ...faq };
+    setFaqs([...faqs, newFaq]);
+  };
+  
+  const updateFaq = (id: string, updates: Partial<FAQItem>) => {
+    setFaqs(faqs.map(faq => (faq.id === id ? { ...faq, ...updates } : faq)));
+  };
+  
+  const deleteFaq = (id: string) => {
+    setFaqs(faqs.filter(faq => faq.id !== id));
+  };
+  
+  const updateSettings = (updates: Partial<SettingsData>) => {
+    setSettings({ ...settings, ...updates });
+  };
+  
+  const toggleOrderSelection = (orderId: string) => {
+    if (selectedOrders.includes(orderId)) {
+      setSelectedOrders(selectedOrders.filter(id => id !== orderId));
+    } else {
+      setSelectedOrders([...selectedOrders, orderId]);
+    }
+  };
+  
+  const selectAllOrders = (checked: boolean) => {
+    if (checked) {
       const allOrderIds = orders.map(order => order.id);
       setSelectedOrders(allOrderIds);
     } else {
@@ -160,26 +199,72 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
   
+  const clearAllOrders = () => {
+    setSelectedOrders([]);
+  };
+  
+  // Helper function to generate a unique order number
+  const generateOrderNumber = (): string => {
+    const baseNumber = 1000;
+    const randomNumber = Math.floor(Math.random() * 2000) + baseNumber;
+    return `#${randomNumber}`;
+  };
+
+  const parseCSVData = (csvData: string): OrderData[] => {
+    const lines = csvData.trim().split('\n');
+    const headers = lines[0].split(',').map(header => header.trim());
+    const rows = lines.slice(1).map(line => {
+      const values = line.split(',').map(value => value.trim());
+      return headers.reduce((obj: { [key: string]: string }, header, index) => {
+        obj[header] = values[index];
+        return obj;
+      }, {});
+    });
+    
+    return rows.map((row, index) => {
+      const defaultOrderNumbers = ['1091', '1184', '1185', '1189', '1191', '1192'];
+      const orderNumber = row.orderNumber || defaultOrderNumbers[index % defaultOrderNumbers.length];
+      
+      return {
+        id: row.id || uuidv4(),
+        orderNumber: orderNumber.replace(/^#/, ''),
+        name: row.name,
+        phone: row.phone,
+        product: row.product,
+        address: row.address,
+        status: (row.status as OrderStatus) || 'To Process',
+      };
+    });
+  };
+  
+  const appContextValue: AppContextType = {
+    orders,
+    addOrder,
+    updateOrder,
+    deleteOrder,
+    updateOrderStatus,
+    templates,
+    addTemplate,
+    updateTemplate,
+    deleteTemplate,
+    faqs,
+    addFaq,
+    updateFaq,
+    deleteFaq,
+    settings,
+    updateSettings,
+    isWhatsappReady,
+    setWhatsappReady,
+    selectedOrders,
+    toggleOrderSelection,
+    selectAllOrders,
+    clearAllOrders,
+    processingStatus,
+    setProcessingStatus,
+  };
+  
   return (
-    <AppContext.Provider value={{
-      orders,
-      setOrders,
-      updateOrderStatus,
-      templates,
-      setTemplates,
-      faqs,
-      setFaqs,
-      settings,
-      setSettings,
-      isWhatsappReady,
-      setIsWhatsappReady,
-      selectedOrders,
-      setSelectedOrders,
-      toggleOrderSelection,
-      selectAllOrders,
-      processingStatus,
-      setProcessingStatus
-    }}>
+    <AppContext.Provider value={appContextValue}>
       {children}
     </AppContext.Provider>
   );
@@ -187,7 +272,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
 export const useAppContext = () => {
   const context = useContext(AppContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAppContext must be used within an AppProvider');
   }
   return context;

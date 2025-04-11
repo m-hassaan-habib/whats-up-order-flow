@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppContext } from '@/context/AppContext';
 import { v4 as uuidv4 } from 'uuid';
@@ -121,10 +120,10 @@ const Settings = () => {
       </div>
       
       <Tabs defaultValue="general" className="w-full space-y-6">
-        <TabsList className="w-full grid grid-cols-1 md:grid-cols-3 gap-2">
-          <TabsTrigger value="general" className="px-4 py-2">General Settings</TabsTrigger>
-          <TabsTrigger value="templates" className="px-4 py-2">Message Templates</TabsTrigger>
-          <TabsTrigger value="faqs" className="px-4 py-2">FAQs & Responses</TabsTrigger>
+        <TabsList className="w-full flex justify-between mb-4">
+          <TabsTrigger value="general">General Settings</TabsTrigger>
+          <TabsTrigger value="templates">Message Templates</TabsTrigger>
+          <TabsTrigger value="faqs">FAQs & Responses</TabsTrigger>
         </TabsList>
         
         <TabsContent value="general" className="space-y-6">

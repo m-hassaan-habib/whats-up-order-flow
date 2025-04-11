@@ -3,7 +3,7 @@ export type OrderStatus = 'Not Responding' | 'To Process' | 'Confirmed' | 'Cance
 
 export interface OrderData {
   id: string;
-  orderNumber: string; // Added orderNumber field
+  orderNumber: string;
   product: string;
   name: string;
   phone: string;
@@ -40,4 +40,14 @@ export interface SettingsData {
     username: string;
     saved: boolean;
   };
+}
+
+export interface MessageLog {
+  id: string;
+  phone: string;
+  orderNumber: string;
+  customerName: string;
+  timestamp: string;
+  status: 'delivered' | 'failed';
+  errorMessage?: string;
 }

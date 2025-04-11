@@ -32,6 +32,17 @@ interface AppContextType {
   setTemplates: React.Dispatch<React.SetStateAction<MessageTemplate[]>>;
   setFaqs: React.Dispatch<React.SetStateAction<FAQItem[]>>;
   setSettings: React.Dispatch<React.SetStateAction<SettingsData>>;
+  processIncomingMessage: (phone: string, message: string) => void;
+  messageDeliveryLogs: {
+    id: string;
+    phone: string;
+    orderNumber: string;
+    customerName: string;
+    timestamp: string;
+    status: 'delivered' | 'failed';
+    errorMessage?: string;
+  }[];
+  addMessageLog: (log: Omit<AppContextType['messageDeliveryLogs'][0], 'id' | 'timestamp'>) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -88,6 +99,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const [isWhatsappReady, setWhatsappReady] = useState<boolean>(false);
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [processingStatus, setProcessingStatus] = useState<{ [orderId: string]: 'idle' | 'processing' | 'success' | 'error' }>({});
+  const [messageDeliveryLogs, setMessageDeliveryLogs] = useState<AppContextType['messageDeliveryLogs']>([]);
   
   useEffect(() => {
     // Load data from localStorage on component mount
@@ -135,6 +147,19 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     localStorage.setItem('settings', JSON.stringify(settings));
   }, [settings]);
   
+  // New effect to store message logs
+  useEffect(() => {
+    localStorage.setItem('messageDeliveryLogs', JSON.stringify(messageDeliveryLogs));
+  }, [messageDeliveryLogs]);
+  
+  useEffect(() => {
+    // Load message logs from localStorage
+    const storedLogs = localStorage.getItem('messageDeliveryLogs');
+    if (storedLogs) {
+      setMessageDeliveryLogs(JSON.parse(storedLogs));
+    }
+  }, []);
+  
   const addOrder = (order: Omit<OrderData, 'id'>) => {
     const newOrder: OrderData = { 
       id: uuidv4(), 
@@ -160,6 +185,38 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       )
     );
   };
+  
+  // Handle incoming WhatsApp messages and update order status accordingly
+  const processIncomingMessage = useCallback((phone: string, message: string) => {
+    const order = orders.find(o => o.phone === phone && o.status === 'To Process');
+    
+    if (!order) return;
+    
+    // Check for confirmation keywords
+    const confirmationKeywords = [
+      'yes', 'ok', 'perfect', 'g', 'hn g', 'hn ji', 'han', 'kr do', 
+      'confirmed', 'confirm hai', 'done'
+    ];
+    
+    const normalizedMessage = message.toLowerCase().trim();
+    
+    // Check if message contains any confirmation keyword
+    const isConfirmation = confirmationKeywords.some(keyword => 
+      normalizedMessage === keyword || normalizedMessage.includes(keyword)
+    );
+    
+    if (isConfirmation) {
+      updateOrderStatus(order.id, 'Confirmed');
+      
+      // Record the response
+      updateOrder(order.id, {
+        lastResponseReceived: new Date().toISOString(),
+        responseCount: (order.responseCount || 0) + 1
+      });
+      
+      toast.success(`Order #${order.orderNumber} has been confirmed`);
+    }
+  }, [orders]);
   
   const addTemplate = (template: Omit<MessageTemplate, 'id'>) => {
     const newTemplate: MessageTemplate = { id: uuidv4(), ...template };
@@ -212,6 +269,42 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     setSelectedOrders([]);
   };
   
+  // Add a new message delivery log
+  const addMessageLog = useCallback((log: Omit<AppContextType['messageDeliveryLogs'][0], 'id' | 'timestamp'>) => {
+    const newLog = {
+      ...log,
+      id: uuidv4(),
+      timestamp: new Date().toISOString()
+    };
+    
+    setMessageDeliveryLogs(prev => [newLog, ...prev]);
+  }, []);
+  
+  // Helper function to check for non-responsive orders and update status
+  const checkNonResponsiveOrders = useCallback(() => {
+    const now = new Date();
+    const nonResponseThreshold = 48; // hours
+    
+    orders.forEach(order => {
+      if (order.status !== 'To Process' || !order.lastMessageSent) return;
+      
+      const lastMessageDate = new Date(order.lastMessageSent);
+      const hoursSinceLastMessage = (now.getTime() - lastMessageDate.getTime()) / (1000 * 60 * 60);
+      
+      // If more than 48 hours have passed with no response
+      if (hoursSinceLastMessage > nonResponseThreshold) {
+        updateOrderStatus(order.id, 'Not Responding');
+        toast.info(`Order #${order.orderNumber} marked as Not Responding due to inactivity`);
+      }
+    });
+  }, [orders]);
+  
+  // Check for non-responsive orders every hour
+  useEffect(() => {
+    const intervalId = setInterval(checkNonResponsiveOrders, 60 * 60 * 1000);
+    return () => clearInterval(intervalId);
+  }, [checkNonResponsiveOrders]);
+  
   // Helper function to generate a unique order number
   const generateOrderNumber = (): string => {
     const baseNumber = 1000;
@@ -219,6 +312,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     return `${randomNumber}`;
   };
 
+  // Parsing CSV data with orderNumber field
   const parseCSVData = (csvData: string): OrderData[] => {
     const lines = csvData.trim().split('\n');
     const headers = lines[0].split(',').map(header => header.trim());
@@ -230,13 +324,17 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
       }, {});
     });
     
+    const defaultOrderNumbers = ['1091', '1184', '1185', '1189', '1191', '1192'];
+    
     return rows.map((row, index) => {
-      const defaultOrderNumbers = ['1091', '1184', '1185', '1189', '1191', '1192'];
-      const orderNumber = row.orderNumber || defaultOrderNumbers[index % defaultOrderNumbers.length];
+      // Get orderNumber from row or use default if none exists
+      let orderNumber = row.orderNumber || defaultOrderNumbers[index % defaultOrderNumbers.length];
+      // Remove # if present in order number
+      orderNumber = orderNumber.replace(/^#/, '');
       
       return {
         id: row.id || uuidv4(),
-        orderNumber: orderNumber.replace(/^#/, ''),
+        orderNumber,
         name: row.name,
         phone: row.phone,
         product: row.product,
@@ -270,11 +368,13 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
     clearAllOrders,
     processingStatus,
     setProcessingStatus,
-    // Add the missing setter functions to the context value
     setOrders,
     setTemplates,
     setFaqs,
-    setSettings
+    setSettings,
+    processIncomingMessage,
+    messageDeliveryLogs,
+    addMessageLog
   };
   
   return (

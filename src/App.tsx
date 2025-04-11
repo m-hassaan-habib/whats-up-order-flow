@@ -12,6 +12,7 @@ import Dashboard from "./pages/Dashboard";
 import CSVUpload from "./pages/CSVUpload";
 import Messages from "./pages/Messages";
 import Orders from "./pages/Orders";
+import SheetData from "./pages/SheetData";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/csv-upload" element={<CSVUpload />} />
               <Route path="/messages" element={<Messages />} />
               <Route path="/orders" element={<Orders />} />
+              <Route path="/sheets" element={<SheetData />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="*" element={<NotFound />} />
             </Routes>

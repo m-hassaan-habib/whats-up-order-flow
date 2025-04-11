@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronRight, FileSpreadsheet, Home, MessageSquareText, Settings } from 'lucide-react';
+import { ChevronRight, FileSpreadsheet, Home, MessageSquareText, Settings, ListOrdered, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface LayoutProps {
@@ -14,6 +14,8 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const navItems = [
     { path: '/', label: 'Dashboard', icon: <Home className="h-5 w-5" /> },
     { path: '/csv-upload', label: 'CSV Upload', icon: <FileSpreadsheet className="h-5 w-5" /> },
+    { path: '/orders', label: 'Orders', icon: <ListOrdered className="h-5 w-5" /> },
+    { path: '/sheets', label: 'Sheet Data', icon: <Database className="h-5 w-5" /> },
     { path: '/messages', label: 'Messages', icon: <MessageSquareText className="h-5 w-5" /> },
     { path: '/settings', label: 'Settings', icon: <Settings className="h-5 w-5" /> },
   ];

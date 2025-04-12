@@ -11,21 +11,36 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Filter, Search, FileSpreadsheet, Phone, User, Package, MapPin, Calendar } from 'lucide-react';
 import { OrderListPagination } from '@/components/OrderListPagination';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, subDays, subMonths, subYears, startOfDay, startOfWeek, startOfMonth, startOfYear, isAfter } from 'date-fns';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
+// Date filter options
+const dateFilters = [
+  { value: 'all', label: 'All Time' },
+  { value: 'today', label: 'Today' },
+  { value: 'yesterday', label: 'Yesterday' },
+  { value: 'week', label: 'This Week' },
+  { value: '15days', label: 'Last 15 Days' },
+  { value: 'month', label: 'This Month' },
+  { value: 'lastMonth', label: 'Last Month' },
+  { value: '3months', label: 'Last 3 Months' },
+  { value: '6months', label: 'Last 6 Months' },
+  { value: 'year', label: 'This Year' },
+];
 
 const Orders = () => {
   const { orders } = useAppContext();
   const [filteredOrders, setFilteredOrders] = useState<OrderData[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
+  const [dateFilter, setDateFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Apply filters and search
   useEffect(() => {
     let result = [...orders];
+    const now = new Date();
     
     // Apply search
     if (searchTerm) {
@@ -44,9 +59,48 @@ const Orders = () => {
       result = result.filter(order => order.status === statusFilter);
     }
     
+    // Apply date filter
+    if (dateFilter !== 'all') {
+      result = result.filter(order => {
+        // Convert order creation date string to Date object
+        // Using order.lastMessageSent as a proxy for creation date
+        // In a real app, you would have a createdAt field
+        const orderDate = order.lastMessageSent 
+          ? new Date(order.lastMessageSent) 
+          : new Date(); // Default to now if no date available
+        
+        switch (dateFilter) {
+          case 'today':
+            return isAfter(orderDate, startOfDay(now));
+          case 'yesterday':
+            return isAfter(orderDate, startOfDay(subDays(now, 1))) && 
+                  !isAfter(orderDate, startOfDay(now));
+          case 'week':
+            return isAfter(orderDate, startOfWeek(now));
+          case '15days':
+            return isAfter(orderDate, subDays(now, 15));
+          case 'month':
+            return isAfter(orderDate, startOfMonth(now));
+          case 'lastMonth':
+            const lastMonthStart = startOfMonth(subMonths(now, 1));
+            const thisMonthStart = startOfMonth(now);
+            return isAfter(orderDate, lastMonthStart) && 
+                  !isAfter(orderDate, thisMonthStart);
+          case '3months':
+            return isAfter(orderDate, subMonths(now, 3));
+          case '6months':
+            return isAfter(orderDate, subMonths(now, 6));
+          case 'year':
+            return isAfter(orderDate, startOfYear(now));
+          default:
+            return true;
+        }
+      });
+    }
+    
     setFilteredOrders(result);
     setCurrentPage(1); // Reset to first page when filters change
-  }, [orders, searchTerm, statusFilter]);
+  }, [orders, searchTerm, statusFilter, dateFilter]);
 
   // Calculate pagination
   const totalPages = Math.ceil(filteredOrders.length / itemsPerPage);
@@ -90,7 +144,7 @@ const Orders = () => {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="relative w-full md:w-1/2">
+            <div className="relative w-full md:w-1/3">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
               <Input
                 placeholder="Search by name, order #, phone..."
@@ -99,7 +153,7 @@ const Orders = () => {
                 className="pl-10"
               />
             </div>
-            <div className="w-full md:w-1/4">
+            <div className="w-full md:w-1/5">
               <Select
                 value={statusFilter}
                 onValueChange={(value) => setStatusFilter(value as OrderStatus | 'all')}
@@ -116,7 +170,24 @@ const Orders = () => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="w-full md:w-1/4">
+            <div className="w-full md:w-1/5">
+              <Select
+                value={dateFilter}
+                onValueChange={(value) => setDateFilter(value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Filter by date" />
+                </SelectTrigger>
+                <SelectContent>
+                  {dateFilters.map(filter => (
+                    <SelectItem key={filter.value} value={filter.value}>
+                      {filter.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="w-full md:w-1/5">
               <Select
                 value={itemsPerPage.toString()}
                 onValueChange={(value) => setItemsPerPage(parseInt(value))}

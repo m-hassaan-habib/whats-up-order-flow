@@ -16,7 +16,6 @@ import { MessageTemplate, FAQItem } from '@/types';
 import { toast } from 'sonner';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
-
 const Settings = () => {
   const { 
     settings, 
@@ -38,6 +37,7 @@ const Settings = () => {
   // WhatsApp connection simulation state
   const [connecting, setConnecting] = useState(false);
   const [qrCodeVisible, setQrCodeVisible] = useState(false);
+  const [whatsappWebUrl, setWhatsappWebUrl] = useState('https://web.whatsapp.com');
   
   const saveSettings = () => {
     setSettings(localSettings);
@@ -51,21 +51,29 @@ const Settings = () => {
       // Show QR code for scanning
       setQrCodeVisible(true);
       
-      // Simulate successful QR code scan after 5 seconds
+      // Open WhatsApp Web in a new tab
+      window.open(whatsappWebUrl, '_blank');
+      
+      toast.info("WhatsApp Web has been opened in a new tab. Please scan the QR code there with your phone.");
+      
+      // Keep the QR code visible for user reference
       setTimeout(() => {
-        setQrCodeVisible(false);
         setConnecting(false);
-        setWhatsappReady(true);
-        toast.success("WhatsApp connected successfully!");
-      }, 5000);
+      }, 2000);
     } else {
       // Simulate headless connection
       setTimeout(() => {
         setConnecting(false);
         setWhatsappReady(true);
-        toast.success("WhatsApp connected successfully!");
+        toast.success("WhatsApp connected successfully in headless mode!");
       }, 3000);
     }
+  };
+  
+  const disconnectWhatsApp = () => {
+    setWhatsappReady(false);
+    setQrCodeVisible(false);
+    toast.success("WhatsApp disconnected");
   };
   
   const handleSaveTemplate = (template: MessageTemplate) => {
@@ -173,39 +181,51 @@ const Settings = () => {
               </div>
               
               {qrCodeVisible && (
-                <div className="border rounded-md p-4 bg-muted/20 flex flex-col items-center">
-                  <div className="w-48 h-48 bg-gray-200 rounded-md flex items-center justify-center mb-2">
-                    {/* Simulated QR code (would be a real QR in production) */}
-                    <div className="grid grid-cols-5 grid-rows-5 gap-1 w-36 h-36">
-                      {Array(25).fill(0).map((_, i) => (
-                        <div 
-                          key={i} 
-                          className={`bg-black ${Math.random() > 0.5 ? 'opacity-100' : 'opacity-0'}`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-sm text-center">
-                    Scan this QR code with your WhatsApp mobile app
-                  </p>
-                </div>
+                <Alert className="bg-muted/20 mt-4">
+                  <InfoIcon className="h-4 w-4" />
+                  <AlertTitle>WhatsApp Web QR Code</AlertTitle>
+                  <AlertDescription>
+                    <p className="mb-2">Please scan the QR code in the newly opened WhatsApp Web tab with your phone's WhatsApp app.</p>
+                    <p className="text-sm text-muted-foreground">After connecting, come back to this tab and continue using the bot.</p>
+                  </AlertDescription>
+                </Alert>
               )}
               
               <div className="flex flex-col sm:flex-row gap-2">
-                <Button 
-                  onClick={connectWhatsApp}
-                  disabled={connecting}
-                  className="flex-1"
-                >
-                  {connecting ? (
-                    <>Connecting...</>
-                  ) : (
-                    <>
-                      <Smartphone className="h-4 w-4 mr-2" />
-                      Connect WhatsApp
-                    </>
-                  )}
-                </Button>
+                {isWhatsappReady ? (
+                  <>
+                    <Button 
+                      variant="outline"
+                      onClick={disconnectWhatsApp}
+                      className="flex-1"
+                    >
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Disconnect WhatsApp
+                    </Button>
+                    <Button 
+                      variant="default"
+                      className="flex-1 bg-whatsapp hover:bg-whatsapp/90"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Connected
+                    </Button>
+                  </>
+                ) : (
+                  <Button 
+                    onClick={connectWhatsApp}
+                    disabled={connecting}
+                    className="flex-1 bg-whatsapp hover:bg-whatsapp/90"
+                  >
+                    {connecting ? (
+                      <>Connecting...</>
+                    ) : (
+                      <>
+                        <Smartphone className="h-4 w-4 mr-2" />
+                        Connect WhatsApp
+                      </>
+                    )}
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>

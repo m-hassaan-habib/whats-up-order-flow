@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Edit, Trash2, AlertTriangle } from 'lucide-react';
+import { Edit, Trash2, AlertTriangle, TrashIcon } from 'lucide-react';
 import { OrderListPagination } from '@/components/OrderListPagination';
 import { usePermissions } from '@/hooks/usePermissions';
 import { AuthRequiredAlert } from '@/components/AuthRequiredAlert';
@@ -35,6 +35,7 @@ const ManageOrders = () => {
   const [orderToDelete, setOrderToDelete] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
 
   // Calculate pagination
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -91,6 +92,16 @@ const ManageOrders = () => {
     }
   };
 
+  const handleDeleteAll = () => {
+    setDeleteAllDialogOpen(true);
+  };
+
+  const confirmDeleteAll = () => {
+    setOrders([]);
+    toast.success('All orders deleted successfully');
+    setDeleteAllDialogOpen(false);
+  };
+
   if (!canEdit && !canDelete) {
     return (
       <div className="container mx-auto p-4">
@@ -111,9 +122,21 @@ const ManageOrders = () => {
             Edit and delete customer orders
           </p>
         </div>
-        <Button variant="outline" onClick={() => navigate('/orders')}>
-          Back to Orders
-        </Button>
+        <div className="flex gap-2">
+          {canDelete && orders.length > 0 && (
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteAll}
+              className="flex items-center gap-2"
+            >
+              <TrashIcon className="h-4 w-4" />
+              Delete All Orders
+            </Button>
+          )}
+          <Button variant="outline" onClick={() => navigate('/orders')}>
+            Back to Orders
+          </Button>
+        </div>
       </div>
 
       <Card>
@@ -209,6 +232,25 @@ const ManageOrders = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
             <Button variant="destructive" onClick={confirmDelete}>Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete All Orders Confirmation Dialog */}
+      <Dialog open={deleteAllDialogOpen} onOpenChange={setDeleteAllDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete All Orders</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete ALL orders? This action cannot be undone and will remove {orders.length} orders from the system.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-center text-amber-500 my-4">
+            <AlertTriangle className="h-16 w-16" />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteAllDialogOpen(false)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmDeleteAll}>Delete All</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

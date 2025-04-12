@@ -3,6 +3,7 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight, FileSpreadsheet, Home, MessageSquareText, Settings, ListOrdered, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { AuthStatus } from '@/components/AuthStatus';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -95,8 +96,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </nav>
       </div>
       
-      {/* Main content */}
+      {/* Main content with auth status */}
       <main className="flex-1 p-4 md:p-6 pb-20 md:pb-6 overflow-auto">
+        <div className="flex justify-end mb-4">
+          <AuthStatus />
+        </div>
         {children}
       </main>
     </div>

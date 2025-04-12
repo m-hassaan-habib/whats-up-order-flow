@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -55,9 +54,10 @@ function Calendar({
         ...classNames,
       }}
       components={{
+        // Use a type assertion to resolve the type error
         IconLeft: () => <ChevronLeft className="h-4 w-4" />,
         IconRight: () => <ChevronRight className="h-4 w-4" />,
-      }}
+      } as any}
       {...props}
     />
   )

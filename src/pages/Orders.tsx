@@ -11,7 +11,19 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Filter, Search, FileSpreadsheet, Phone, User, Package, MapPin, Calendar } from 'lucide-react';
 import { OrderListPagination } from '@/components/OrderListPagination';
-import { formatDistanceToNow, subDays, subMonths, subYears, startOfDay, startOfWeek, startOfMonth, startOfYear, isAfter } from 'date-fns';
+import { 
+  formatDistanceToNow, 
+  subDays, 
+  subMonths, 
+  subYears, 
+  startOfDay, 
+  startOfWeek, 
+  startOfMonth, 
+  startOfYear, 
+  isAfter,
+  parse,
+  parseISO
+} from 'date-fns';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 // Date filter options
@@ -36,6 +48,26 @@ const Orders = () => {
   const [dateFilter, setDateFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  // Helper function to safely parse dates
+  const parseOrderDate = (order: OrderData): Date => {
+    try {
+      // First, try to use the orderDate if available
+      if (order.orderDate) {
+        return parseISO(order.orderDate);
+      }
+      
+      // Fall back to lastMessageSent if orderDate isn't available
+      if (order.lastMessageSent) {
+        return new Date(order.lastMessageSent);
+      }
+    } catch (error) {
+      console.error("Error parsing date:", error);
+    }
+    
+    // Default to current date if no valid date is available
+    return new Date();
+  };
 
   // Apply filters and search
   useEffect(() => {
@@ -62,12 +94,8 @@ const Orders = () => {
     // Apply date filter
     if (dateFilter !== 'all') {
       result = result.filter(order => {
-        // Convert order creation date string to Date object
-        // Using order.lastMessageSent as a proxy for creation date
-        // In a real app, you would have a createdAt field
-        const orderDate = order.lastMessageSent 
-          ? new Date(order.lastMessageSent) 
-          : new Date(); // Default to now if no date available
+        // Parse the order date
+        const orderDate = parseOrderDate(order);
         
         switch (dateFilter) {
           case 'today':
@@ -215,7 +243,7 @@ const Orders = () => {
                   <TableHead>Product</TableHead>
                   <TableHead className="hidden md:table-cell">Address</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="hidden md:table-cell">Messages</TableHead>
+                  <TableHead className="hidden md:table-cell">Order Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -235,11 +263,8 @@ const Orders = () => {
                         </Badge>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">
-                        {order.lastMessageSent && (
-                          <span className="text-xs text-muted-foreground">
-                            Last sent: {formatDistanceToNow(new Date(order.lastMessageSent))} ago
-                          </span>
-                        )}
+                        {order.orderDate || (order.lastMessageSent && 
+                          formatDistanceToNow(new Date(order.lastMessageSent)) + ' ago')}
                       </TableCell>
                     </TableRow>
                   ))

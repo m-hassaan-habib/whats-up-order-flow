@@ -13,11 +13,11 @@ import { toast } from 'sonner';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 
-const SampleCSV = `Lineitem name,Billing Name,Billing Phone,Billing Address,Status,Order #
-Electric Callus Remover for Feet,Khan Asim Iqbal,3457766748,"House no. 403-B, Peoples Colony-1",Not Responding,1091
-Electric Callus Remover for Feet,Amna Malik,3331925667,"House no. 123, Model Town",To Process,1184
-Portable Blender,Mohammad Ali,3214567890,"Apartment 7B, Johar Town",Not Responding,1185
-Hair Straightener,Fatima Ahmed,3109876543,"Shop 5, Anarkali Bazaar",To Process,1189`;
+const SampleCSV = `Lineitem name,Billing Name,Billing Phone,Billing Address,Status,Order #,Order Date
+Electric Callus Remover for Feet,Khan Asim Iqbal,3457766748,"House no. 403-B, Peoples Colony-1",Not Responding,1091,2023-04-10
+Electric Callus Remover for Feet,Amna Malik,3331925667,"House no. 123, Model Town",To Process,1184,2023-04-15
+Portable Blender,Mohammad Ali,3214567890,"Apartment 7B, Johar Town",Not Responding,1185,2023-04-20
+Hair Straightener,Fatima Ahmed,3109876543,"Shop 5, Anarkali Bazaar",To Process,1189,2023-04-25`;
 
 const CSVUpload = () => {
   const { orders, setOrders } = useAppContext();
@@ -32,12 +32,13 @@ const CSVUpload = () => {
 
   // Column mapping state
   const [columnMap, setColumnMap] = useState({
-    product: 0, // Default to first column (Lineitem name)
-    name: 1,    // Default to second column (Billing Name)
-    phone: 2,   // Default to third column (Billing Phone)
-    address: 3, // Default to fourth column (Billing Address)
-    status: 4,  // Default to fifth column (Status)
-    orderNumber: 5, // Default to sixth column (Order #)
+    product: 0,      // Default to first column (Lineitem name)
+    name: 1,         // Default to second column (Billing Name)
+    phone: 2,        // Default to third column (Billing Phone)
+    address: 3,      // Default to fourth column (Billing Address)
+    status: 4,       // Default to fifth column (Status)
+    orderNumber: 5,  // Default to sixth column (Order #)
+    orderDate: 6,    // Default to seventh column (Order Date)
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,6 +104,9 @@ const CSVUpload = () => {
           }
           else if (headerLower.includes('order') && headerLower.includes('#')) {
             newColumnMap.orderNumber = index;
+          }
+          else if (headerLower.includes('date') || headerLower.includes('order date')) {
+            newColumnMap.orderDate = index;
           }
         });
         
@@ -208,6 +212,7 @@ const CSVUpload = () => {
           const address = row[columnMap.address] || '';
           let status = row[columnMap.status] || 'To Process';
           let orderNumber = row[columnMap.orderNumber] || '';
+          const orderDate = row[columnMap.orderDate] || new Date().toISOString().split('T')[0];
           
           // Default order numbers if none provided
           if (!orderNumber) {
@@ -246,6 +251,7 @@ const CSVUpload = () => {
               phone: formattedPhone,
               address,
               status: status as OrderStatus,
+              orderDate,
               responseCount: 0
             });
           }
@@ -462,6 +468,10 @@ const CSVUpload = () => {
                         <span className="text-sm">Order Number:</span>
                         <span className="text-sm font-medium">{csvHeaders[columnMap.orderNumber]}</span>
                       </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">Order Date:</span>
+                        <span className="text-sm font-medium">{csvHeaders[columnMap.orderDate]}</span>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -565,6 +575,14 @@ const CSVUpload = () => {
                         <p className="text-xs text-muted-foreground">The unique identifier for the order</p>
                       </div>
                     </div>
+
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-primary mt-0.5" />
+                      <div>
+                        <p className="font-medium text-sm">Order Date</p>
+                        <p className="text-xs text-muted-foreground">The date when the order was placed (e.g., "2023-04-10")</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 
@@ -588,6 +606,7 @@ const CSVUpload = () => {
                           <th className="px-3 py-2 text-sm font-medium text-left border">Billing Address</th>
                           <th className="px-3 py-2 text-sm font-medium text-left border">Status</th>
                           <th className="px-3 py-2 text-sm font-medium text-left border">Order #</th>
+                          <th className="px-3 py-2 text-sm font-medium text-left border">Order Date</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -598,6 +617,7 @@ const CSVUpload = () => {
                           <td className="px-3 py-2 text-sm border">House no. 403-B, Peoples Colony-1</td>
                           <td className="px-3 py-2 text-sm border">Not Responding</td>
                           <td className="px-3 py-2 text-sm border">1091</td>
+                          <td className="px-3 py-2 text-sm border">2023-04-10</td>
                         </tr>
                         <tr className="bg-muted/50">
                           <td className="px-3 py-2 text-sm border">Electric Callus Remover for Feet</td>
@@ -606,6 +626,7 @@ const CSVUpload = () => {
                           <td className="px-3 py-2 text-sm border">House no. 123, Model Town</td>
                           <td className="px-3 py-2 text-sm border">To Process</td>
                           <td className="px-3 py-2 text-sm border">1184</td>
+                          <td className="px-3 py-2 text-sm border">2023-04-15</td>
                         </tr>
                       </tbody>
                     </table>

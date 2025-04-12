@@ -9,6 +9,7 @@ export interface OrderData {
   phone: string;
   address: string;
   status: OrderStatus;
+  orderDate?: string; // Add order date field
   lastMessageSent?: string;
   lastResponseReceived?: string;
   responseCount?: number;

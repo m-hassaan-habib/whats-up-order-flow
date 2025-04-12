@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Search, FileSpreadsheet, CalendarDays } from 'lucide-react';
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import { formatDistanceToNow, format } from 'date-fns';
+import { formatDistanceToNow, format, parseISO } from 'date-fns';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 
 
@@ -29,18 +29,33 @@ const SheetData = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [selectedSheet, setSelectedSheet] = useState<string | null>(null);
   
-  // Group orders by sheet (for this demo, we'll use upload date as a proxy for sheet)
+  // Group orders by sheet (using order date)
   useEffect(() => {
     const groups: { [key: string]: OrderData[] } = {};
     
-    // Group orders by the day they were added (simulating sheet uploads)
-    orders.forEach(order => {
-      // Create a unique identifier based on current date as placeholder
-      // In a real implementation, you'd use actual sheet identifiers
-      const dateKey = order.lastMessageSent ? 
-        format(new Date(order.lastMessageSent), 'yyyy-MM-dd') : 
-        'unknown-date';
+    // Helper function to safely get the date from an order
+    const getOrderDateKey = (order: OrderData): string => {
+      try {
+        // First try to use orderDate if available
+        if (order.orderDate) {
+          return order.orderDate.split('T')[0]; // Get just the date part
+        }
         
+        // Fall back to lastMessageSent
+        if (order.lastMessageSent) {
+          return format(new Date(order.lastMessageSent), 'yyyy-MM-dd');
+        }
+      } catch (error) {
+        console.error("Error getting date key:", error);
+      }
+      
+      return 'unknown-date';
+    };
+    
+    // Group orders by the day they were added
+    orders.forEach(order => {
+      const dateKey = getOrderDateKey(order);
+      
       if (!groups[dateKey]) {
         groups[dateKey] = [];
       }
@@ -54,6 +69,13 @@ const SheetData = () => {
       date: key,
       orders: groups[key]
     }));
+    
+    // Sort groups by date (newest first)
+    groupArray.sort((a, b) => {
+      if (a.date === 'unknown-date') return 1;
+      if (b.date === 'unknown-date') return -1;
+      return b.date.localeCompare(a.date);
+    });
     
     setSheetGroups(groupArray);
     
@@ -195,6 +217,7 @@ const SheetData = () => {
                             <TableHead>Phone</TableHead>
                             <TableHead>Product</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead>Order Date</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -210,11 +233,15 @@ const SheetData = () => {
                                     {order.status}
                                   </Badge>
                                 </TableCell>
+                                <TableCell>
+                                  {order.orderDate || (order.lastMessageSent && 
+                                    formatDistanceToNow(new Date(order.lastMessageSent)) + ' ago')}
+                                </TableCell>
                               </TableRow>
                             ))
                           ) : (
                             <TableRow>
-                              <TableCell colSpan={5} className="h-24 text-center">
+                              <TableCell colSpan={6} className="h-24 text-center">
                                 No orders found matching your criteria
                               </TableCell>
                             </TableRow>

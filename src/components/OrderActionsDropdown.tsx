@@ -13,6 +13,7 @@ import { Dialog, DialogTrigger } from '@/components/ui/dialog';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface OrderActionsDropdownProps {
   orderId: string;
@@ -31,6 +32,7 @@ export const OrderActionsDropdown: React.FC<OrderActionsDropdownProps> = ({
 }) => {
   const { canEdit, canDelete } = usePermissions();
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
 
   const handleEditClick = () => {
     if (!isAuthenticated) {
@@ -54,6 +56,14 @@ export const OrderActionsDropdown: React.FC<OrderActionsDropdownProps> = ({
       return;
     }
     onStatusChange(status);
+  };
+
+  const navigateToManageOrders = () => {
+    if (isAuthenticated) {
+      navigate('/manage-orders');
+    } else {
+      toast.error('You need to be logged in to manage orders');
+    }
   };
 
   return (
@@ -102,6 +112,11 @@ export const OrderActionsDropdown: React.FC<OrderActionsDropdownProps> = ({
           <span className="flex items-center">
             <Ban className="mr-2 h-4 w-4" />
             Set to "Cancelled"
+          </span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={navigateToManageOrders}>
+          <span className="flex items-center">
+            Go to Manage Orders
           </span>
         </DropdownMenuItem>
       </DropdownMenuContent>

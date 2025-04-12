@@ -17,10 +17,19 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 
+// Enhanced validation schema with complex password requirements
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string()
+    .email('Invalid email address')
+    .regex(/^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'Please provide a valid email address')
+    .regex(/\.com$|\.net$|\.org$|\.edu$|\.gov$|\.co$/, 'Email must end with a valid domain (.com, .net, etc.)'),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^a-zA-Z0-9]/, 'Password must contain at least one special character'),
   confirmPassword: z.string(),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -46,6 +55,7 @@ const Signup = () => {
       password: '',
       confirmPassword: '',
     },
+    mode: 'onChange', // Enable validation on change for better user experience
   });
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
@@ -103,6 +113,9 @@ const Signup = () => {
                       <Input type="password" placeholder="******" {...field} />
                     </FormControl>
                     <FormMessage />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Password must be at least 8 characters and include uppercase, lowercase, number and special character.
+                    </p>
                   </FormItem>
                 )}
               />

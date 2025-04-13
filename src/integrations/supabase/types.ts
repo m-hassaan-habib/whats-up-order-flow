@@ -9,7 +9,149 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      message_logs: {
+        Row: {
+          created_at: string | null
+          error_message: string | null
+          id: string
+          message: string
+          order_id: string | null
+          phone: string
+          status: string
+        }
+        Insert: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message: string
+          order_id?: string | null
+          phone: string
+          status: string
+        }
+        Update: {
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          message?: string
+          order_id?: string | null
+          phone?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_logs_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          address: string | null
+          created_at: string | null
+          id: string
+          last_message_sent: string | null
+          last_response_received: string | null
+          message_count: number | null
+          name: string
+          order_number: string
+          phone: string
+          product: string | null
+          response_count: number | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          address?: string | null
+          created_at?: string | null
+          id?: string
+          last_message_sent?: string | null
+          last_response_received?: string | null
+          message_count?: number | null
+          name: string
+          order_number: string
+          phone: string
+          product?: string | null
+          response_count?: number | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          address?: string | null
+          created_at?: string | null
+          id?: string
+          last_message_sent?: string | null
+          last_response_received?: string | null
+          message_count?: number | null
+          name?: string
+          order_number?: string
+          phone?: string
+          product?: string | null
+          response_count?: number | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      templates: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          name: string
+          updated_at: string | null
+          variables: string[] | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          name: string
+          updated_at?: string | null
+          variables?: string[] | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          name?: string
+          updated_at?: string | null
+          variables?: string[] | null
+        }
+        Relationships: []
+      }
+      whatsapp_sessions: {
+        Row: {
+          connection_status: string | null
+          created_at: string | null
+          id: string
+          last_connected: string | null
+          qr_code: string | null
+          session_data: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          connection_status?: string | null
+          created_at?: string | null
+          id?: string
+          last_connected?: string | null
+          qr_code?: string | null
+          session_data?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          connection_status?: string | null
+          created_at?: string | null
+          id?: string
+          last_connected?: string | null
+          qr_code?: string | null
+          session_data?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -8,10 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { OrderData } from '@/types';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-
+import { useIsMobile } from '@/hooks/use-mobile';
+import { OrderStatusBadge } from '@/components/orders/OrderStatusBadge';
 
 const Dashboard = () => {
   const { orders, isWhatsappReady, settings } = useAppContext();
+  const isMobile = useIsMobile();
   
   // Calculate summary stats
   const totalOrders = orders.length;
@@ -34,32 +36,6 @@ const Dashboard = () => {
     })
     .slice(0, 5);
 
-  // Get stats by status
-  const getStatusConfig = (status: string) => {
-    switch (status) {
-      case 'Confirmed':
-        return { icon: <Check className="h-5 w-5 text-green-500" />, bgColor: 'bg-green-100', textColor: 'text-green-700' };
-      case 'Not Responding':
-        return { icon: <Clock className="h-5 w-5 text-amber-500" />, bgColor: 'bg-amber-100', textColor: 'text-amber-700' };
-      case 'To Process':
-        return { icon: <MessageSquare className="h-5 w-5 text-blue-500" />, bgColor: 'bg-blue-100', textColor: 'text-blue-700' };
-      case 'Cancelled':
-        return { icon: <X className="h-5 w-5 text-red-500" />, bgColor: 'bg-red-100', textColor: 'text-red-700' };
-      default:
-        return { icon: <MessageSquare className="h-5 w-5 text-gray-500" />, bgColor: 'bg-gray-100', textColor: 'text-gray-700' };
-    }
-  };
-
-  const StatusBadge = ({ status }: { status: string }) => {
-    const { icon, bgColor, textColor } = getStatusConfig(status);
-    return (
-      <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${bgColor} ${textColor}`}>
-        {icon}
-        <span>{status}</span>
-      </div>
-    );
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -69,19 +45,26 @@ const Dashboard = () => {
             Manage your WhatsApp order follow-ups
           </p>
         </div>
-        <div className="flex gap-2 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
           <ThemeToggle />
           
           <Link to="/csv-upload">
-            <Button className="flex items-center gap-2">
+            <Button 
+              className="flex items-center gap-2"
+              size={isMobile ? "sm" : "default"}
+            >
               <FileSpreadsheet className="h-4 w-4" />
-              Upload CSV
+              {!isMobile ? "Upload CSV" : "CSV"}
             </Button>
           </Link>
           <Link to="/messages">
-            <Button variant="outline" className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              className="flex items-center gap-2"
+              size={isMobile ? "sm" : "default"}
+            >
               <Send className="h-4 w-4" />
-              Send Messages
+              {!isMobile ? "Send Messages" : "Send"}
             </Button>
           </Link>
         </div>
@@ -90,7 +73,7 @@ const Dashboard = () => {
       {!isWhatsappReady && (
         <Card className="border-amber-200 bg-amber-50 dark:bg-amber-900 dark:border-amber-800">
           <CardContent className="p-4">
-            <div className="flex items-start gap-4">
+            <div className="flex flex-col md:flex-row items-start gap-4">
               <div className="flex-shrink-0 w-10 h-10 rounded-full bg-amber-100 dark:bg-amber-800 flex items-center justify-center">
                 <MessageSquare className="h-5 w-5 text-amber-600 dark:text-amber-200" />
               </div>
@@ -111,7 +94,7 @@ const Dashboard = () => {
       )}
       
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -126,14 +109,14 @@ const Dashboard = () => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Confirmed Orders
+              Confirmed
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{confirmed}</div>
             <Progress value={confirmationRate} className="h-2 mt-2" />
             <p className="text-xs text-muted-foreground mt-1">
-              {confirmationRate}% confirmation rate
+              {confirmationRate}% confirmed
             </p>
           </CardContent>
         </Card>
@@ -185,11 +168,11 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <p className="font-medium">{order.name}</p>
-                      <p className="text-sm text-muted-foreground">{order.product}</p>
+                      <p className="text-sm text-muted-foreground truncate max-w-[150px] md:max-w-full">{order.product}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <StatusBadge status={order.status} />
+                    <OrderStatusBadge status={order.status} />
                   </div>
                 </div>
               ))}
@@ -211,8 +194,8 @@ const Dashboard = () => {
           )}
         </CardContent>
         <CardFooter className="border-t bg-muted/50 px-6 py-3">
-          <p className="text-xs text-muted-foreground">
-            <strong>Business Name:</strong> {settings.businessName} | 
+          <p className="text-xs text-muted-foreground truncate w-full">
+            <strong>Business:</strong> {settings.businessName} | 
             <strong> Website:</strong> {settings.websiteUrl}
           </p>
         </CardFooter>
